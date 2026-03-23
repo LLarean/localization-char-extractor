@@ -23,7 +23,7 @@ Browser-based utility for extracting unique characters from localization JSON fi
 ## Quick Start
 
 1. Paste or drag-and-drop your localization JSON into the input field
-2. Enter the language column name (e.g. `Japanese`)
+2. Select or enter the language name (suggestions are populated automatically from the JSON)
 3. Click **Extract characters**
 4. Copy the resulting character set to clipboard
 
