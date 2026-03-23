@@ -1,0 +1,102 @@
+﻿@page "/"
+@inject IJSRuntime JS
+
+<div class="container">
+    <h1>Localization Char Extractor</h1>
+
+    <div class="section">
+        <label>JSON (вставьте или перетащите файл)</label>
+        <div class="drop-zone @(_isDragging ? "dragging" : "")"
+             @ondragover:preventDefault
+             @ondragenter="() => _isDragging = true"
+             @ondragleave="() => _isDragging = false"
+             @ondrop="OnDrop">
+            <textarea @bind="_jsonInput" placeholder="Вставьте JSON сюда..."></textarea>
+        </div>
+    </div>
+
+    <div class="section">
+        <label>Язык (заголовок колонки, например: Japanese)</label>
+        <input @bind="_language" placeholder="English" />
+    </div>
+
+    <button class="btn-primary" @onclick="Extract">Извлечь символы</button>
+
+    @if (!string.IsNullOrEmpty(_result))
+    {
+        <div class="section">
+            <label>Уникальные символы (@_charCount)</label>
+            <textarea id="result-output" readonly>@_result</textarea>
+            <button class="btn-secondary" @onclick="CopyToClipboard">Скопировать в буфер</button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="error">@_error</div>
+    }
+</div>
+
+@code {
+    private string _jsonInput = "";
+    private string _language = "";
+    private string _result = "";
+    private string _error = "";
+    private int _charCount = 0;
+    private bool _isDragging = false;
+
+    private void Extract()
+    {
+        _error = "";
+        _result = "";
+
+        try
+        {
+            var doc = System.Text.Json.JsonDocument.Parse(_jsonInput);
+            var files = doc.RootElement
+                .GetProperty("Localization")
+                .GetProperty("files")
+                .EnumerateArray();
+
+            var chars = new System.Collections.Generic.HashSet<char>();
+
+            foreach (var file in files)
+            {
+                if (file.GetProperty("name").GetString() != _language) continue;
+
+                var content = file.GetProperty("content").GetString();
+                var contentDoc = System.Text.Json.JsonDocument.Parse(content);
+
+                foreach (var prop in contentDoc.RootElement.EnumerateObject())
+                    foreach (var c in prop.Value.GetString() ?? "")
+                        chars.Add(c);
+            }
+
+            if (chars.Count == 0)
+            {
+                _error = $"Язык '{_language}' не найден или пустой.";
+                return;
+            }
+
+            var sorted = new System.Collections.Generic.List<char>(chars);
+            sorted.Sort();
+            _result = string.Concat(sorted);
+            _charCount = sorted.Count;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Ошибка парсинга: {ex.Message}";
+        }
+    }
+
+    private async Task OnDrop(DragEventArgs e)
+    {
+        _isDragging = false;
+        _jsonInput = await JS.InvokeAsync<string>("readDroppedFile", e);
+    }
+
+    private async Task CopyToClipboard()
+    {
+        await JS.InvokeVoidAsync("copyToClipboard", "result-output");
+    }
+}

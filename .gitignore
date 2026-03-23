@@ -1,0 +1,24 @@
+# Build output
+bin/
+obj/
+
+# IDE
+.idea/
+.vs/
+*.user
+*.suo
+
+# Rider / ReSharper
+_ReSharper*/
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+.nuget/
+
+# Blazor WASM publish output
+wwwroot/_framework/
+
+# OS
+.DS_Store
+Thumbs.db
