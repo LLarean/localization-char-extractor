@@ -13,10 +13,14 @@
 </head>
 
 <script>
-    window.readDroppedFile = async (e) => {
-        const file = e.dataTransfer?.files?.[0];
-        if (!file) return "";
-        return await file.text();
+    window.registerDropZone = (element, dotNetRef) => {
+        element.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer?.files?.[0];
+            if (!file) return;
+            const text = await file.text();
+            await dotNetRef.invokeMethodAsync('OnFileDropped', text);
+        });
     };
 
     window.copyToClipboard = (id) => {

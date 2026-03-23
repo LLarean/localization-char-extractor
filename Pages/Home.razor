@@ -1,5 +1,6 @@
-﻿@page "/"
+@page "/"
 @inject IJSRuntime JS
+@implements IDisposable
 
 <div class="container">
     <h1>Localization Char Extractor</h1>
@@ -7,10 +8,10 @@
     <div class="section">
         <label>JSON (вставьте или перетащите файл)</label>
         <div class="drop-zone @(_isDragging ? "dragging" : "")"
+             @ref="_dropZoneRef"
              @ondragover:preventDefault
              @ondragenter="() => _isDragging = true"
-             @ondragleave="() => _isDragging = false"
-             @ondrop="OnDrop">
+             @ondragleave="() => _isDragging = false">
             <textarea @bind="_jsonInput" placeholder="Вставьте JSON сюда..."></textarea>
         </div>
     </div>
@@ -44,6 +45,25 @@
     private string _error = "";
     private int _charCount = 0;
     private bool _isDragging = false;
+    private ElementReference _dropZoneRef;
+    private DotNetObjectReference<Home>? _selfRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerDropZone", _dropZoneRef, _selfRef);
+        }
+    }
+
+    [JSInvokable]
+    public void OnFileDropped(string content)
+    {
+        _jsonInput = content;
+        _isDragging = false;
+        StateHasChanged();
+    }
 
     private void Extract()
     {
@@ -89,14 +109,10 @@
         }
     }
 
-    private async Task OnDrop(DragEventArgs e)
-    {
-        _isDragging = false;
-        _jsonInput = await JS.InvokeAsync<string>("readDroppedFile", e);
-    }
-
     private async Task CopyToClipboard()
     {
         await JS.InvokeVoidAsync("copyToClipboard", "result-output");
     }
+
+    public void Dispose() => _selfRef?.Dispose();
 }
