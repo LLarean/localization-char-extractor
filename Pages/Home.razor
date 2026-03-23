@@ -19,22 +19,40 @@
              @ondragover:preventDefault
              @ondragenter="() => _isDragging = true"
              @ondragleave="() => _isDragging = false">
-            <textarea @bind="_jsonInput" placeholder="Paste JSON here..."></textarea>
+            <textarea @bind="_jsonInput" @bind:after="ParseLanguages" placeholder="Paste JSON here..."></textarea>
         </div>
     </div>
 
     <div class="section">
         <label>Language (column header, e.g. Japanese)</label>
-        <input @bind="_language" placeholder="English" />
+        <input @bind="_language" list="language-list" placeholder="English" />
+        <datalist id="language-list">
+            @foreach (var lang in _languages)
+            {
+                <option value="@lang" />
+            }
+        </datalist>
     </div>
 
-    <button class="btn-primary" @onclick="Extract">Extract characters</button>
+    <button class="btn-primary" @onclick="Extract" disabled="@_isExtracting">Extract characters</button>
 
-    @if (!string.IsNullOrEmpty(_result))
+    @if (_isExtracting)
+    {
+        <div class="file-progress">
+            <div class="file-progress-bar"></div>
+        </div>
+    }
+
+    @if (_runes.Count > 0)
     {
         <div class="section">
             <label>Unique characters (@_charCount)</label>
-            <textarea id="result-output" readonly>@_result</textarea>
+            <div class="char-grid">
+                @foreach (var rune in _runes)
+                {
+                    <span class="char-chip">@rune.ToString()</span>
+                }
+            </div>
             <button class="btn-secondary" @onclick="CopyToClipboard">Copy to clipboard</button>
         </div>
     }
@@ -51,8 +69,11 @@
     private string _result = "";
     private string _error = "";
     private int _charCount = 0;
+    private List<Rune> _runes = new();
+    private List<string> _languages = new();
     private bool _isDragging = false;
     private bool _isLoading = false;
+    private bool _isExtracting = false;
     private ElementReference _dropZoneRef;
     private DotNetObjectReference<Home>? _selfRef;
 
@@ -78,13 +99,34 @@
         _jsonInput = content;
         _isDragging = false;
         _isLoading = false;
+        ParseLanguages();
         StateHasChanged();
     }
 
-    private void Extract()
+    private void ParseLanguages()
+    {
+        _languages.Clear();
+        if (string.IsNullOrWhiteSpace(_jsonInput)) return;
+        try
+        {
+            var doc = System.Text.Json.JsonDocument.Parse(_jsonInput);
+            foreach (var file in doc.RootElement.GetProperty("Localization").GetProperty("files").EnumerateArray())
+            {
+                var name = file.GetProperty("name").GetString();
+                if (!string.IsNullOrEmpty(name))
+                    _languages.Add(name);
+            }
+        }
+        catch { }
+    }
+
+    private async Task Extract()
     {
         _error = "";
         _result = "";
+        _runes = new();
+        _isExtracting = true;
+        await Task.Yield();
 
         try
         {
@@ -94,7 +136,7 @@
                 .GetProperty("files")
                 .EnumerateArray();
 
-            var chars = new System.Collections.Generic.HashSet<char>();
+            var runeSet = new HashSet<Rune>();
 
             foreach (var file in files)
             {
@@ -104,30 +146,34 @@
                 var contentDoc = System.Text.Json.JsonDocument.Parse(content);
 
                 foreach (var prop in contentDoc.RootElement.EnumerateObject())
-                    foreach (var c in prop.Value.GetString() ?? "")
-                        chars.Add(c);
+                    foreach (var rune in (prop.Value.GetString() ?? "").EnumerateRunes())
+                        if (rune.Value > 31 && rune.Value != 127)
+                            runeSet.Add(rune);
             }
 
-            if (chars.Count == 0)
+            if (runeSet.Count == 0)
             {
                 _error = $"Language '{_language}' not found or empty.";
                 return;
             }
 
-            var sorted = new System.Collections.Generic.List<char>(chars);
-            sorted.Sort();
-            _result = string.Concat(sorted);
-            _charCount = sorted.Count;
+            _runes = runeSet.OrderBy(r => r.Value).ToList();
+            _result = string.Concat(_runes);
+            _charCount = _runes.Count;
         }
         catch (Exception ex)
         {
             _error = $"Parse error: {ex.Message}";
         }
+        finally
+        {
+            _isExtracting = false;
+        }
     }
 
     private async Task CopyToClipboard()
     {
-        await JS.InvokeVoidAsync("copyToClipboard", "result-output");
+        await JS.InvokeVoidAsync("copyToClipboard", _result);
     }
 
     public void Dispose() => _selfRef?.Dispose();

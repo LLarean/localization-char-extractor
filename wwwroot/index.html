@@ -24,10 +24,8 @@
         });
     };
 
-    window.copyToClipboard = (id) => {
-        const el = document.getElementById(id);
-        el.select();
-        document.execCommand('copy');
+    window.copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
     };
 </script>
 

@@ -12,6 +12,10 @@
 
 Browser-based utility for extracting unique characters from localization JSON files. Useful for generating character sets required by custom fonts in game and app localization workflows.
 
+## Preview
+
+![Screenshot](wwwroot/Screenshot.jpg)
+
 ## Live Demo
 
 **[https://llarean.github.io/localization-char-extractor/](https://llarean.github.io/localization-char-extractor/)**
