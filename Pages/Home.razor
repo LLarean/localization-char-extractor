@@ -6,29 +6,29 @@
     <h1>Localization Char Extractor</h1>
 
     <div class="section">
-        <label>JSON (вставьте или перетащите файл)</label>
+        <label>JSON (paste or drag-and-drop a file)</label>
         <div class="drop-zone @(_isDragging ? "dragging" : "")"
              @ref="_dropZoneRef"
              @ondragover:preventDefault
              @ondragenter="() => _isDragging = true"
              @ondragleave="() => _isDragging = false">
-            <textarea @bind="_jsonInput" placeholder="Вставьте JSON сюда..."></textarea>
+            <textarea @bind="_jsonInput" placeholder="Paste JSON here..."></textarea>
         </div>
     </div>
 
     <div class="section">
-        <label>Язык (заголовок колонки, например: Japanese)</label>
+        <label>Language (column header, e.g. Japanese)</label>
         <input @bind="_language" placeholder="English" />
     </div>
 
-    <button class="btn-primary" @onclick="Extract">Извлечь символы</button>
+    <button class="btn-primary" @onclick="Extract">Extract characters</button>
 
     @if (!string.IsNullOrEmpty(_result))
     {
         <div class="section">
-            <label>Уникальные символы (@_charCount)</label>
+            <label>Unique characters (@_charCount)</label>
             <textarea id="result-output" readonly>@_result</textarea>
-            <button class="btn-secondary" @onclick="CopyToClipboard">Скопировать в буфер</button>
+            <button class="btn-secondary" @onclick="CopyToClipboard">Copy to clipboard</button>
         </div>
     }
 
@@ -94,7 +94,7 @@
 
             if (chars.Count == 0)
             {
-                _error = $"Язык '{_language}' не найден или пустой.";
+                _error = $"Language '{_language}' not found or empty.";
                 return;
             }
 
@@ -105,7 +105,7 @@
         }
         catch (Exception ex)
         {
-            _error = $"Ошибка парсинга: {ex.Message}";
+            _error = $"Parse error: {ex.Message}";
         }
     }
 
