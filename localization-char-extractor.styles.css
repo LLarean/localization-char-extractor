@@ -178,6 +178,34 @@ h1[b-n6wxi8wzkt] {
     100% { background-position: -100% 0; }
 }
 
+.char-grid[b-n6wxi8wzkt] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.75rem;
+    background-color: #222;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.char-chip[b-n6wxi8wzkt] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.4rem;
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 1rem;
+    color: #e0e0e0;
+    user-select: none;
+}
+
 .btn-primary[b-n6wxi8wzkt],
 .btn-secondary[b-n6wxi8wzkt] {
     padding: 0.45rem 1.2rem;
