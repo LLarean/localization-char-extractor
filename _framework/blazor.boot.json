@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "localization-char-extractor",
   "resources": {
-    "hash": "sha256-tOb0Tk0Nls2QNKnvJm3SoVkT41mK3Y+RBsWjGBwHoRk=",
+    "hash": "sha256-MBjcgh+rLAqT3yYZH/l0Ij1pNTczK1DUUB5FNBPK2fo=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-NljIbpK/1KCj0+knpX8U77Rbl5kTtfFIuFjK7AuczEw="
     },
@@ -47,7 +47,7 @@
       "System.Text.Json.wasm": "sha256-/uB8fAkcCbXMpACYQYRi9Mq16aeMYJ8lzQcKwKxbCbk=",
       "System.Text.RegularExpressions.wasm": "sha256-nE7XCiyeCswUnRGdXOQvcHP+XMWXcToACrazpZlocBI=",
       "System.Private.CoreLib.wasm": "sha256-ON5WNDW4YcfpfRgVcZ/njM9rzgpe67F2YPkf/WvnwCs=",
-      "localization-char-extractor.wasm": "sha256-0RZnIe45QFYtBM9gzO+LaLfWkSB8oJnqlXB5GnXSof8="
+      "localization-char-extractor.wasm": "sha256-cOfPlQOI7nCXHlXZkv8nxyG3325JmUgmK3Bgo6s5pAI="
     }
   },
   "cacheBootResources": true,

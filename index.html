@@ -18,6 +18,7 @@
             e.preventDefault();
             const file = e.dataTransfer?.files?.[0];
             if (!file) return;
+            await dotNetRef.invokeMethodAsync('SetLoading', true);
             const text = await file.text();
             await dotNetRef.invokeMethodAsync('OnFileDropped', text);
         });
