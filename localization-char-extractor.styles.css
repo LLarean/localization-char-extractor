@@ -246,3 +246,22 @@ h1[b-n6wxi8wzkt] {
     margin-top: 0.5rem;
     font-size: 0.9rem;
 }
+
+.github-link[b-n6wxi8wzkt] {
+    display: block;
+    width: fit-content;
+    margin: 2rem auto 0.5rem;
+    opacity: 0.3;
+    transition: opacity 0.2s;
+}
+
+.github-link:hover[b-n6wxi8wzkt] {
+    opacity: 0.7;
+}
+
+.github-link svg[b-n6wxi8wzkt] {
+    width: 20px;
+    height: 20px;
+    fill: #e0e0e0;
+    display: block;
+}
