@@ -19,22 +19,55 @@
              @ondragover:preventDefault
              @ondragenter="() => _isDragging = true"
              @ondragleave="() => _isDragging = false">
-            <textarea @bind="_jsonInput" @bind:after="ParseLanguages" placeholder="Paste JSON here..."></textarea>
+            <textarea @bind="_jsonInput" @bind:after="OnJsonChanged" placeholder="Paste JSON here..."></textarea>
         </div>
     </div>
 
     <div class="section">
-        <label>Language (column header, e.g. Japanese)</label>
-        <input @bind="_language" list="language-list" placeholder="English" />
-        <datalist id="language-list">
-            @foreach (var lang in _languages)
-            {
-                <option value="@lang" />
-            }
-        </datalist>
+        @if (_languages.Count > 0)
+        {
+            <div class="result-header">
+                <label>Languages</label>
+                <div class="result-actions">
+                    <button class="btn-link" @onclick="SelectAllLanguages">all</button>
+                    <button class="btn-link" @onclick="DeselectAllLanguages">none</button>
+                </div>
+            </div>
+            <div class="lang-grid">
+                @foreach (var lang in _languages)
+                {
+                    <span class="lang-chip @(_selectedLanguages.Contains(lang) ? "selected" : "")"
+                          @onclick="() => ToggleLanguage(lang)">@lang</span>
+                }
+            </div>
+        }
+        else
+        {
+            <label>Language (column header, e.g. Japanese)</label>
+            <input @bind="_language" placeholder="English" />
+        }
     </div>
 
-    <button class="btn-primary" @onclick="Extract" disabled="@_isExtracting">Extract characters</button>
+    <div class="section">
+        <div class="result-header">
+            <label>Unicode range</label>
+        </div>
+        <div class="lang-grid">
+            @foreach (var preset in UnicodePresets)
+            {
+                <span class="lang-chip @(_activePreset == preset.Key ? "selected" : "")"
+                      @onclick="() => _activePreset = preset.Key">@preset.Key</span>
+            }
+        </div>
+    </div>
+
+    <div class="extract-row">
+        <button class="btn-primary" @onclick="Extract" disabled="@_isExtracting">Extract characters</button>
+        <label class="checkbox-label">
+            <input type="checkbox" @bind="_includeEmoji" />
+            Include emoji
+        </label>
+    </div>
 
     @if (_isExtracting)
     {
@@ -46,11 +79,19 @@
     @if (_runes.Count > 0)
     {
         <div class="section">
-            <label>Unique characters (@_charCount)</label>
+            <div class="result-header">
+                <label>Unique characters (@ActiveCharCount@(_excludedRunes.Count > 0 ? $" / {_runes.Count}" : ""))</label>
+                <div class="result-actions">
+                    <button class="btn-link" @onclick="SelectAll">all</button>
+                    <button class="btn-link" @onclick="DeselectAll">none</button>
+                </div>
+            </div>
             <div class="char-grid">
                 @foreach (var rune in _runes)
                 {
-                    <span class="char-chip">@rune.ToString()</span>
+                    <span class="char-chip @(_excludedRunes.Contains(rune) ? "excluded" : "")"
+                          title="U+@(rune.Value.ToString("X4"))"
+                          @onclick="() => ToggleRune(rune)">@rune.ToString()</span>
                 }
             </div>
             <button class="btn-secondary" @onclick="CopyToClipboard">Copy to clipboard</button>
@@ -79,11 +120,26 @@
 @code {
     private string _jsonInput = "";
     private string _language = "";
-    private string _result = "";
     private string _error = "";
-    private int _charCount = 0;
     private List<Rune> _runes = new();
+    private HashSet<Rune> _excludedRunes = new();
     private List<string> _languages = new();
+    private HashSet<string> _selectedLanguages = new();
+
+    private int ActiveCharCount => _runes.Count - _excludedRunes.Count;
+    private bool _includeEmoji = true;
+    private string _activePreset = "All";
+
+    private static readonly IReadOnlyDictionary<string, (int From, int To)?> UnicodePresets =
+        new Dictionary<string, (int, int)?>
+        {
+            ["All"]      = null,
+            ["Latin"]    = (0x0020, 0x024F),
+            ["Cyrillic"] = (0x0400, 0x04FF),
+            ["Greek"]    = (0x0370, 0x03FF),
+            ["Arabic"]   = (0x0600, 0x06FF),
+            ["CJK"]      = (0x4E00, 0x9FFF),
+        };
     private bool _isDragging = false;
     private bool _isLoading = false;
     private bool _isExtracting = false;
@@ -96,6 +152,15 @@
         {
             _selfRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("registerDropZone", _dropZoneRef, _selfRef);
+            await JS.InvokeVoidAsync("registerKeyboardShortcuts", _selfRef);
+
+            var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "lce_json");
+            if (!string.IsNullOrEmpty(saved))
+            {
+                _jsonInput = saved;
+                ParseLanguages();
+                StateHasChanged();
+            }
         }
     }
 
@@ -112,13 +177,23 @@
         _jsonInput = content;
         _isDragging = false;
         _isLoading = false;
-        ParseLanguages();
+        OnJsonChanged();
         StateHasChanged();
+    }
+
+    [JSInvokable]
+    public Task TriggerExtract() => Extract();
+
+    private void OnJsonChanged()
+    {
+        ParseLanguages();
+        _ = JS.InvokeVoidAsync("localStorage.setItem", "lce_json", _jsonInput);
     }
 
     private void ParseLanguages()
     {
         _languages.Clear();
+        _selectedLanguages.Clear();
         if (string.IsNullOrWhiteSpace(_jsonInput)) return;
         try
         {
@@ -129,6 +204,9 @@
                 if (!string.IsNullOrEmpty(name))
                     _languages.Add(name);
             }
+
+            if (_languages.Count > 0)
+                _selectedLanguages.Add(_languages[0]);
         }
         catch { }
     }
@@ -136,8 +214,8 @@
     private async Task Extract()
     {
         _error = "";
-        _result = "";
         _runes = new();
+        _excludedRunes.Clear();
         _isExtracting = true;
         await Task.Yield();
 
@@ -149,30 +227,42 @@
                 .GetProperty("files")
                 .EnumerateArray();
 
+            var targets = _languages.Count > 0
+                ? _selectedLanguages
+                : (string.IsNullOrWhiteSpace(_language) ? [] : new HashSet<string> { _language });
+
+            if (targets.Count == 0)
+            {
+                _error = "Please select at least one language.";
+                return;
+            }
+
             var runeSet = new HashSet<Rune>();
 
             foreach (var file in files)
             {
-                if (file.GetProperty("name").GetString() != _language) continue;
+                if (!targets.Contains(file.GetProperty("name").GetString() ?? "")) continue;
 
                 var content = file.GetProperty("content").GetString();
                 var contentDoc = System.Text.Json.JsonDocument.Parse(content);
 
+                var range = UnicodePresets[_activePreset];
+
                 foreach (var prop in contentDoc.RootElement.EnumerateObject())
                     foreach (var rune in (prop.Value.GetString() ?? "").EnumerateRunes())
-                        if (rune.Value > 31 && rune.Value != 127)
+                        if (rune.Value > 31 && rune.Value != 127
+                            && (_includeEmoji || !IsEmoji(rune))
+                            && (range is null || rune.Value >= range.Value.From && rune.Value <= range.Value.To))
                             runeSet.Add(rune);
             }
 
             if (runeSet.Count == 0)
             {
-                _error = $"Language '{_language}' not found or empty.";
+                _error = "No characters found for the selected language(s).";
                 return;
             }
 
             _runes = runeSet.OrderBy(r => r.Value).ToList();
-            _result = string.Concat(_runes);
-            _charCount = _runes.Count;
         }
         catch (Exception ex)
         {
@@ -184,9 +274,34 @@
         }
     }
 
+    private static bool IsEmoji(Rune rune) =>
+        rune.Value is (>= 0x2600 and <= 0x27BF)  // Miscellaneous Symbols, Dingbats
+        or >= 0x1F000;                             // Supplementary emoji blocks
+
+    private void ToggleLanguage(string lang)
+    {
+        if (!_selectedLanguages.Remove(lang))
+            _selectedLanguages.Add(lang);
+    }
+
+    private void SelectAllLanguages() => _selectedLanguages = new(_languages);
+
+    private void DeselectAllLanguages() => _selectedLanguages.Clear();
+
+    private void ToggleRune(Rune rune)
+    {
+        if (!_excludedRunes.Remove(rune))
+            _excludedRunes.Add(rune);
+    }
+
+    private void SelectAll() => _excludedRunes.Clear();
+
+    private void DeselectAll() => _excludedRunes = new(_runes);
+
     private async Task CopyToClipboard()
     {
-        await JS.InvokeVoidAsync("copyToClipboard", _result);
+        var text = string.Concat(_runes.Where(r => !_excludedRunes.Contains(r)));
+        await JS.InvokeVoidAsync("copyToClipboard", text);
     }
 
     public void Dispose() => _selfRef?.Dispose();

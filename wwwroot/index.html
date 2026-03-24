@@ -27,6 +27,15 @@
     window.copyToClipboard = (text) => {
         navigator.clipboard.writeText(text);
     };
+
+    window.registerKeyboardShortcuts = (dotNetRef) => {
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                dotNetRef.invokeMethodAsync('TriggerExtract');
+            }
+        });
+    };
 </script>
 
 <body>
