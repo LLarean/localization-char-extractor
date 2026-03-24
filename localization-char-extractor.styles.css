@@ -204,6 +204,19 @@ h1[b-n6wxi8wzkt] {
     font-size: 1rem;
     color: #e0e0e0;
     user-select: none;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.char-chip:hover[b-n6wxi8wzkt] {
+    border-color: #4a9eff;
+    color: #4a9eff;
+}
+
+.char-chip.excluded[b-n6wxi8wzkt] {
+    opacity: 0.2;
+    border-color: transparent;
+    color: #e0e0e0;
 }
 
 .btn-primary[b-n6wxi8wzkt],
@@ -216,14 +229,43 @@ h1[b-n6wxi8wzkt] {
     transition: background-color 0.15s;
 }
 
+.extract-row[b-n6wxi8wzkt] {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.checkbox-label[b-n6wxi8wzkt] {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: #aaa;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-label input[type="checkbox"][b-n6wxi8wzkt] {
+    accent-color: #4a9eff;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    cursor: pointer;
+}
+
 .btn-primary[b-n6wxi8wzkt] {
     color: #fff;
     background-color: #2563b0;
-    margin-bottom: 1rem;
 }
 
 .btn-primary:hover[b-n6wxi8wzkt] {
     background-color: #1d4f91;
+}
+
+.btn-primary:disabled[b-n6wxi8wzkt] {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .btn-secondary[b-n6wxi8wzkt] {
@@ -245,6 +287,63 @@ h1[b-n6wxi8wzkt] {
     padding: 0.5rem 0.75rem;
     margin-top: 0.5rem;
     font-size: 0.9rem;
+}
+
+.lang-grid[b-n6wxi8wzkt] {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.lang-chip[b-n6wxi8wzkt] {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.65rem;
+    background-color: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: #888;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+}
+
+.lang-chip.selected[b-n6wxi8wzkt] {
+    background-color: #1a2a3a;
+    border-color: #4a9eff;
+    color: #4a9eff;
+}
+
+.lang-chip:not(.selected):hover[b-n6wxi8wzkt] {
+    border-color: #555;
+    color: #ccc;
+}
+
+.result-header[b-n6wxi8wzkt] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.result-actions[b-n6wxi8wzkt] {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-link[b-n6wxi8wzkt] {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.8rem;
+    color: #4a9eff;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.btn-link:hover[b-n6wxi8wzkt] {
+    opacity: 1;
 }
 
 .github-link[b-n6wxi8wzkt] {
