@@ -252,6 +252,7 @@
             }
 
             var runeSet = new HashSet<Rune>();
+            var range = UnicodePresets[_activePreset];
 
             foreach (var file in files)
             {
@@ -259,8 +260,6 @@
 
                 var content = file.GetProperty("content").GetString();
                 var contentDoc = System.Text.Json.JsonDocument.Parse(content);
-
-                var range = UnicodePresets[_activePreset];
 
                 foreach (var prop in contentDoc.RootElement.EnumerateObject())
                     foreach (var rune in (prop.Value.GetString() ?? "").EnumerateRunes())
