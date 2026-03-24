@@ -37,11 +37,33 @@ h1 {
 }
 
 .drop-zone {
+    position: relative;
     border: 2px dashed #3a3a3a;
     border-radius: 6px;
     padding: 0.5rem;
     transition: border-color 0.2s, background-color 0.2s;
     background-color: #222;
+}
+
+.clear-btn {
+    position: absolute;
+    top: 0.35rem;
+    right: 0.35rem;
+    width: 1.4rem;
+    height: 1.4rem;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 3px;
+    color: #555;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.clear-btn:hover {
+    color: #e0e0e0;
 }
 
 .drop-zone.dragging {
@@ -81,6 +103,11 @@ h1 {
     animation: shimmer 1.4s infinite linear;
 }
 
+@keyframes chipIn {
+    from { opacity: 0; transform: scale(0.75); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
 @keyframes shimmer {
     0%   { background-position: 100% 0; }
     100% { background-position: -100% 0; }
@@ -114,6 +141,7 @@ h1 {
     user-select: none;
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s, opacity 0.15s;
+    animation: chipIn 0.18s ease backwards;
 }
 
 .char-chip:hover {
@@ -179,12 +207,22 @@ h1 {
 .btn-secondary {
     color: #4a9eff;
     background-color: #1e2a3a;
-    margin-top: 0.4rem;
-    align-self: flex-start;
 }
 
 .btn-secondary:hover {
     background-color: #253444;
+}
+
+.copy-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.4rem;
+}
+
+.btn-link.format-active {
+    opacity: 1;
+    color: #e0e0e0;
 }
 
 .error {

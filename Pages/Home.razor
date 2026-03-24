@@ -20,6 +20,10 @@
              @ondragenter="() => _isDragging = true"
              @ondragleave="() => _isDragging = false">
             <textarea @bind="_jsonInput" @bind:after="OnJsonChanged" placeholder="Paste JSON here..."></textarea>
+            @if (!string.IsNullOrEmpty(_jsonInput))
+            {
+                <button class="clear-btn" @onclick="ClearJson" title="Clear JSON">×</button>
+            }
         </div>
     </div>
 
@@ -87,14 +91,23 @@
                 </div>
             </div>
             <div class="char-grid">
-                @foreach (var rune in _runes)
+                @foreach (var (rune, i) in _runes.Select((r, i) => (r, i)))
                 {
                     <span class="char-chip @(_excludedRunes.Contains(rune) ? "excluded" : "")"
                           title="U+@(rune.Value.ToString("X4"))"
+                          style="animation-delay: @(Math.Min(i * 8, 400))ms"
                           @onclick="() => ToggleRune(rune)">@rune.ToString()</span>
                 }
             </div>
-            <button class="btn-secondary" @onclick="CopyToClipboard">Copy to clipboard</button>
+            <div class="copy-row">
+                <button class="btn-secondary" @onclick="CopyToClipboard">Copy to clipboard</button>
+                <div class="result-actions">
+                    <button class="btn-link @(_copyFormat == "string" ? "format-active" : "")"
+                            @onclick='() => _copyFormat = "string"'>string</button>
+                    <button class="btn-link @(_copyFormat == "hex" ? "format-active" : "")"
+                            @onclick='() => _copyFormat = "hex"'>U+XXXX</button>
+                </div>
+            </div>
         </div>
     }
 
@@ -129,6 +142,7 @@
     private int ActiveCharCount => _runes.Count - _excludedRunes.Count;
     private bool _includeEmoji = true;
     private string _activePreset = "All";
+    private string _copyFormat = "string";
 
     private static readonly IReadOnlyDictionary<string, (int From, int To)?> UnicodePresets =
         new Dictionary<string, (int, int)?>
@@ -298,9 +312,23 @@
 
     private void DeselectAll() => _excludedRunes = new(_runes);
 
+    private void ClearJson()
+    {
+        _jsonInput = "";
+        _languages.Clear();
+        _selectedLanguages.Clear();
+        _runes.Clear();
+        _excludedRunes.Clear();
+        _error = "";
+        _ = JS.InvokeVoidAsync("localStorage.removeItem", "lce_json");
+    }
+
     private async Task CopyToClipboard()
     {
-        var text = string.Concat(_runes.Where(r => !_excludedRunes.Contains(r)));
+        var active = _runes.Where(r => !_excludedRunes.Contains(r));
+        var text = _copyFormat == "hex"
+            ? string.Join(" ", active.Select(r => $"U+{r.Value:X4}"))
+            : string.Concat(active);
         await JS.InvokeVoidAsync("copyToClipboard", text);
     }
 
